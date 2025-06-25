@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEMguard</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+
+    <style>
+        :root {
+            --color-primario: #0D47A1;
+            --color-fondo: #ECEFF1;
+            --color-contenedor: #FFFFFF;
+            --color-texto-principal: #37474F;
+            --color-texto-secundario: #607D8B;
+            --color-borde: #CFD8DC;
+            --color-sombra: rgba(0, 0, 0, 0.1);
+            --color-exito: #4CAF50;
+            --color-error: #F44336;
+            --color-aviso: #ffc107;
+            --color-overlay: rgba(0, 0, 0, 0.6);
+            --fuente-principal: 'Inter', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--fuente-principal);
+            background-color: var(--color-fondo);
+            color: var(--color-texto-principal);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .hidden { display: none !important; }
+        .view { min-height: 100vh; width: 100%; }
+        #login-view { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1rem; background: linear-gradient(135deg, #1e3a8a, #3b82f6); }
+        .login-box { background: var(--color-contenedor); padding: 2.5rem; border-radius: 8px; box-shadow: 0 4px 15px var(--color-sombra); width: 100%; max-width: 400px; text-align: center; }
+        .login-box h1 { color: var(--color-primario); margin-bottom: 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
+        header { position: relative; background-color: var(--color-primario); color: var(--color-contenedor); padding: 1.5rem; box-shadow: 0 2px 5px var(--color-sombra); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        header h1 { font-weight: 700; font-size: 1.8rem; }
+        header .header-buttons { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: flex-end; }
+        main { padding-top: 2rem; }
+        .card { background-color: var(--color-contenedor); border-radius: 8px; box-shadow: 0 1px 3px var(--color-sombra); padding: 1.5rem; overflow: hidden; }
+        .main-controls { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 6px; font-family: var(--fuente-principal); font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center;}
+        .btn-primary { background-color: var(--color-primario); color: var(--color-contenedor); }
+        .btn-secondary { background-color: #6c757d; color: var(--color-contenedor); }
+        .btn-danger { background-color: var(--color-error); color: white; }
+        .btn-warning { background-color: var(--color-aviso); color: #1d3c57; }
+        .form-group { margin-bottom: 1.5rem; text-align: left; }
+        .form-group label { margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; }
+        .form-group input, .form-group select { padding: 0.75rem; border: 1px solid var(--color-borde); border-radius: 6px; font-family: var(--fuente-principal); font-size: 1rem; width: 100%; }
+        .responsive-table { width: 100%; border-collapse: collapse; }
+        .responsive-table thead { background-color: #f8f9fa; }
+        .responsive-table th, .responsive-table td { padding: 1rem 0.75rem; border-bottom: 1px solid var(--color-borde); vertical-align: middle; text-align: left; }
+        .responsive-table th { font-weight: 500; color: var(--color-texto-secundario); text-transform: uppercase; font-size: 0.85rem; }
+        td .action-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .action-btn { background: none; border: 1px solid transparent; cursor: pointer; padding: 0.3rem; border-radius: 4px; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; }
+        .action-btn.edit { color: #0d6efd; }
+        .action-btn.delete { color: var(--color-error); }
+        .action-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .status-badge { padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 500; color: #fff; text-transform: capitalize; }
+        .status-badge.activo { background-color: var(--color-exito); }
+        .status-badge.inactivo { background-color: #78909c; }
+        .status-badge.licencia { background-color: #ffc107; color: #212529; }
+        .status-badge.vacaciones { background-color: #03a9f4; color: white; }
+        @media (max-width: 768px) {
+            header { justify-content: center; }
+            .responsive-table thead { display: none; }
+            .responsive-table tr { display: block; margin-bottom: 1rem; border: 1px solid var(--color-borde); border-radius: 8px; padding: 1rem; }
+            .responsive-table td { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px dashed var(--color-borde); }
+            .responsive-table td:last-child { border-bottom: none; }
+            .responsive-table td::before { content: attr(data-label); font-weight: 500; color: var(--color-texto-secundario); text-align: left; padding-right: 1rem; }
+        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--color-overlay); display: flex; justify-content: center; align-items: center; z-index: 2000; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; padding: 1rem; }
+        .modal-overlay.visible { opacity: 1; visibility: visible; }
+        .modal { background-color: var(--color-contenedor); border-radius: 8px; padding: 1.5rem; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--color-borde); margin-bottom: 1.5rem; }
+        .close-modal-btn { background: none; border: none; font-size: 1.8rem; cursor: pointer; color: var(--color-texto-secundario); }
+        .modal-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--color-borde); }
+        #map-modal .modal { max-width: 95%; height: 90vh; }
+        #map-container { height: calc(100% - 70px); width: 100%; border-radius: 6px; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: var(--color-texto-principal); color: white; padding: 1rem 1.5rem; border-radius: 6px; z-index: 3000; opacity: 0; transition: all 0.3s ease; }
+        .toast.show { opacity: 1; bottom: 40px; }
+                .notification-container { position: relative; }
+        #notification-bell { cursor: pointer; }
+        #notification-bell svg { width: 28px; height: 28px; fill: white; }
+        #notification-count { position: absolute; top: -5px; right: -8px; background-color: var(--color-error); color: white; border-radius: 50%; padding: 0.1rem 0.4rem; font-size: 0.75rem; font-weight: bold; display: none; pointer-events: none; }
+        
+        #notification-panel {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 360px;
+            background-color: white;
+            border: 1px solid var(--color-borde);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px var(--color-sombra);
+            max-height: 450px;
+            overflow-y: auto;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.6s ease-in-out;
+        }
+        #notification-panel.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        @media (max-width: 480px) {
+            #notification-panel {
+                left: 50%;
+                right: auto;
+                width: 95vw;
+                transform: translateX(-50%) translateY(10px);
+            }
+            #notification-panel.visible {
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        #notification-panel h3 { font-size: 1.1rem; padding: 1rem; border-bottom: 1px solid var(--color-borde); color: var(--color-texto-principal); }
+        #notification-list { list-style: none; padding: 0; margin: 0; }
+        .notification-item { display: flex; gap: 1rem; padding: 1rem; border-bottom: 1px solid #f0f0f0; animation: fadeIn 0.5s ease-in-out; }
+        .notification-item:last-child { border-bottom: none; }
+        .notification-item.unread { background-color: #e3f2fd; }
+        .notification-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .notification-icon svg { width: 20px; height: 20px; color: white; }
+        .notification-icon.entrada { background-color: var(--color-exito); }
+        .notification-icon.salida { background-color: var(--color-error); }
+        .notification-content { flex: 1; min-width: 0; }
+        .notification-content p { margin: 0; font-size: 0.9rem; color: #212529; font-weight: 500; white-space: normal; word-wrap: break-word; }
+        .notification-content small { display: block; color: var(--color-texto-secundario); font-size: 0.8rem; margin-top: 0.25rem; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body>
+
+    <section id="login-view" class="view">
+        <div class="login-box">
+            <h1>SEMguard</h1>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-rut">RUT</label>
+                    <input type="text" id="login-rut" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar</button>
+            </form>
+        </div>
+    </section>
+
+    <section id="admin-panel-view" class="view hidden">
+        <header>
+             <h1>Panel Admin</h1>
+             <div class="header-buttons">
+                 <button class="btn btn-secondary" id="admin-change-password-btn">Cambiar Contraseña</button>
+                 <button class="btn btn-danger" id="admin-logout-btn">Cerrar Sesión</button>
+                 <div class="notification-container">
+                    <div id="notification-bell" title="Notificaciones">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.5V11C18 7.69 15.31 5 12 5S6 7.69 6 11V16.5L4 18V19H20V18L18 16.5ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z"/></svg>
+                        <span id="notification-count"></span>
+                    </div>
+                    <div id="notification-panel" class="hidden">
+                        <h3>Notificaciones</h3>
+                        <ul id="notification-list"></ul>
+                    </div>
+                </div>
+             </div>
+        </header>
+        <main class="container">
+            <div class="main-controls">
+                <button class="btn btn-primary" id="show-map-btn">Ver Mapa</button>
+                <button class="btn btn-primary" id="add-employee-btn">Agregar Personal</button>
+            </div>
+            <div class="card">
+                <table id="employee-table" class="responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre Completo</th><th>RUT</th><th>Cargo</th><th>Estado</th><th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </main>
+    </section>
+
+    <section id="guard-panel-view" class="view hidden">
+        <header>
+            <h1>Portal de Turnos</h1>
+            <div class="header-buttons">
+                <button class="btn btn-secondary" id="guard-change-password-btn">Cambiar Contraseña</button>
+                <button class="btn btn-danger" id="guard-logout-btn">Cerrar Sesión</button>
+            </div>
+        </header>
+        <main class="container">
+            <div class="card">
+                <h2 id="guard-welcome">Bienvenido/a</h2>
+                <div class="guard-actions">
+                    <button class="btn btn-primary" id="mark-entry-btn">Marcar Entrada</button>
+                    <button class="btn btn-secondary" id="mark-exit-btn">Marcar Salida</button>
+                </div>
+                <p class="last-mark-info" id="last-mark-info"></p>
+                <h3>Historial del Día</h3>
+                <table id="turnos-table" class="responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Hora</th><th>Tipo</th><th>Ubicación</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </main>
+    </section>
+    
+    <div class="modal-overlay" id="form-modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title"></h2>
+                <button class="close-modal-btn">&times;</button>
+            </div>
+            <form id="employee-form">
+                <div class="form-grid">
+                    <div class="form-group"><label for="rut">RUT</label><input type="text" id="rut" name="rut" required></div>
+                    <div class="form-group"><label for="nombre">Nombre</label><input type="text" id="nombre" name="nombre" required></div>
+                    <div class="form-group"><label for="apellido">Apellido</label><input type="text" id="apellido" name="apellido" required></div>
+                    <div class="form-group"><label for="cargo">Cargo</label><input type="text" id="cargo" name="cargo"></div>
+                    <div class="form-group"><label for="estadoLaboral">Estado</label><select id="estadoLaboral" name="estadoLaboral"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option><option value="Licencia">Licencia</option><option value="Vacaciones">Vacaciones</option></select></div>
+                    <div class="form-group"><label for="fechaContratacion">Fecha Contratación</label><input type="date" id="fechaContratacion" name="fechaContratacion"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-warning hidden" id="reset-password-btn">Resetear Contraseña</button>
+                    <button type="button" class="btn btn-secondary js-close-modal">Cancelar</button>
+                    <button type="submit" id="save-employee-btn" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="modal-overlay" id="password-modal-overlay">
+        <div class="modal">
+            <div class="modal-header"><h2>Cambiar Contraseña</h2><button class="close-modal-btn">&times;</button></div>
+            <form id="change-password-form">
+                <div class="form-group"><label for="current-password">Contraseña Actual</label><input type="password" id="current-password" required autocomplete="current-password"></div>
+                <div class="form-group"><label for="new-password">Nueva Contraseña</label><input type="password" id="new-password" required autocomplete="new-password"></div>
+                <div class="form-group"><label for="confirm-password">Confirmar Nueva Contraseña</label><input type="password" id="confirm-password" required autocomplete="new-password"></div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary js-close-modal">Cancelar</button><button type="submit" class="btn btn-primary">Actualizar</button></div>
+            </form>
+        </div>
+    </div>
+    <div class="modal-overlay" id="confirm-modal-overlay">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header"><h2 id="confirm-title"></h2></div>
+            <p id="confirm-text" style="text-align:center; margin: 1rem 0;"></p>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" id="cancel-action-btn">Cancelar</button><button type="button" class="btn" id="confirm-action-btn">Confirmar</button></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="map-modal">
+        <div class="modal">
+            <div class="modal-header"><h2>Ubicación de Guardias Activos</h2><button class="close-modal-btn">&times;</button></div>
+            <div id="map-container"></div>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+        
+    <script type="module">
+        // --- 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAygWClNJT4IYPuF9P-QB93UBK9Y8QCIm4",
+            authDomain: "proyectoarqui-dffa4.firebaseapp.com",
+            databaseURL: "https://proyectoarqui-dffa4-default-rtdb.firebaseio.com",
+            projectId: "proyectoarqui-dffa4",
+            storageBucket: "proyectoarqui-dffa4.firebasestorage.app",
+            messagingSenderId: "863862999605",
+            appId: "1:863862999605:web:fad96c96f7be0fcac4bf7c"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // --- 2. ESTADO GLOBAL Y VARIABLES ---
+        let session = { user: null, personalData: null };
+        let unsubscribes = [];
+        let currentEditingRut = null;
+        let actionToConfirm = null;
+        let leafletMap = null;
+        let markersLayer = null;
+        const icons = {
+            entrada: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5z"/></svg>`,
+            salida: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M13 17l1.4-1.4-2.6-2.6H22v-2H11.8l2.6-2.6L13 7l-5 5 5 5z"/></svg>`
+        };
+
+        // --- 3. LÓGICA DE AUTENTICACIÓN Y NAVEGACIÓN ---
+        async function handleLogin(e) {
+            e.preventDefault();
+            const rut = document.getElementById('login-rut').value.trim();
+            const password = document.getElementById('login-password').value;
+            if (!rut || !password) {
+                showToast('Por favor, complete todos los campos.', 'error');
+                return;
+            }
+            try {
+                const userDoc = await db.collection('usuarios').doc(rut).get();
+                if (!userDoc.exists || userDoc.data().password !== password) {
+                    showToast('Credenciales incorrectas.', 'error');
+                    return;
+                }
+                session.user = userDoc.data();
+                if (session.user.rol === 'guard') {
+                    const personalDoc = await db.collection('personal').doc(rut).get();
+                    session.personalData = personalDoc.exists ? personalDoc.data() : null;
+                }
+                navigateToView(session.user.rol);
+            } catch (error) {
+                console.error("Error al iniciar sesión:", error);
+                showToast('Error al conectar con el servidor.', 'error');
+            }
+        }
+
+        function handleLogout() {
+            session = { user: null, personalData: null };
+            unsubscribes.forEach(unsub => unsub());
+            unsubscribes = [];
+            navigateToView('login');
+        }
+
+        function navigateToView(viewName) {
+            const views = {
+                login: document.getElementById('login-view'),
+                admin: document.getElementById('admin-panel-view'),
+                guard: document.getElementById('guard-panel-view')
+            };
+            Object.values(views).forEach(v => v.classList.add('hidden'));
+            
+            const viewToShow = views[viewName] || views['login'];
+            viewToShow.classList.remove('hidden');
+
+            if (viewName === 'admin') {
+                renderAdminPanel();
+                escucharNotificaciones();
+            } else if (viewName === 'guard') {
+                renderGuardPanel();
+            }
+        }
+
+        // --- 4. FUNCIONES DE VALIDACIÓN ---
+        function validarRut(rut) {
+            rut = rut.replace(/\./g, '').replace(/-/g, '').trim().toLowerCase();
+            const cuerpo = rut.slice(0, -1);
+            let dv = rut.slice(-1);
+            if (!/^[0-9]+[0-9kK]{1}$/.test(rut)) return false;
+            let suma = 0;
+            let multiplo = 2;
+            for (let i = cuerpo.length - 1; i >= 0; i--) {
+                suma += multiplo * cuerpo.charAt(i);
+                if (multiplo < 7) multiplo++; else multiplo = 2;
+            }
+            const dvEsperado = 11 - (suma % 11);
+            dv = (dv === 'k') ? 10 : dv;
+            dv = (dv == 0) ? 11 : dv;
+            return dvEsperado == dv;
+        }
+
+        function validarPassword(password) {
+            if (password.length < 6) return "La contraseña debe tener al menos 6 caracteres.";
+            if (!/[A-Z]/.test(password)) return "La contraseña debe contener al menos una mayúscula.";
+            if (!/[0-9]/.test(password)) return "La contraseña debe contener al menos un número.";
+            return null;
+        }
+
+        // --- 5. LÓGICA DE PANELES Y VISTAS ---
+        function renderAdminPanel() {
+            const tbody = document.querySelector('#admin-panel-view #employee-table tbody');
+            const unsub = db.collection('personal').onSnapshot(querySnapshot => {
+                tbody.innerHTML = '';
+                querySnapshot.forEach(doc => {
+                    const p = doc.data();
+                    const tr = document.createElement('tr');
+                    const statusClass = p.estadoLaboral ? p.estadoLaboral.toLowerCase().replace(/ /g, '') : 'inactivo';
+                    tr.innerHTML = `
+                        <td data-label="Nombre">${p.nombre} ${p.apellido}</td>
+                        <td data-label="RUT">${p.rut}</td>
+                        <td data-label="Cargo">${p.cargo || ''}</td>
+                        <td data-label="Estado"><span class="status-badge ${statusClass}">${p.estadoLaboral}</span></td>
+                        <td data-label="Acciones">
+                            <div class="action-buttons">
+                                <button class="action-btn edit" data-rut="${p.rut}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> Editar
+                                </button>
+                                <button class="action-btn delete" data-rut="${p.rut}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Eliminar
+                                </button>
+                            </div>
+                        </td>`;
+                    tbody.appendChild(tr);
+                });
+            }, error => console.error("Error obteniendo personal:", error));
+            unsubscribes.push(unsub);
+        }
+        
+        function renderGuardPanel() {
+             if (!session.user || !session.personalData) { handleLogout(); return; }
+             document.getElementById('guard-welcome').textContent = `Bienvenido/a, ${session.personalData.nombre}`;
+             renderTurnosHoy();
+        }
+
+        function renderTurnosHoy() {
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            const manana = new Date(hoy);
+            manana.setDate(manana.getDate() + 1);
+            const turnosListener = db.collection('registrosDeTurno')
+                .where('rut', '==', session.user.rut)
+                .where('fechaHora', '>=', hoy)
+                .where('fechaHora', '<', manana)
+                .orderBy('fechaHora', 'desc')
+                .onSnapshot(querySnapshot => {
+                    const tbody = document.querySelector('#guard-panel-view #turnos-table tbody');
+                    const lastMarkInfo = document.getElementById('last-mark-info');
+                    tbody.innerHTML = '';
+                    if (querySnapshot.empty) {
+                        lastMarkInfo.textContent = "Aún no has realizado marcas hoy.";
+                        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 1rem; display: block;">Sin registros.</td></tr>`;
+                        return;
+                    }
+                    const turnosDelDia = querySnapshot.docs.map(doc => doc.data());
+                    const ultimaMarca = turnosDelDia[0];
+                    lastMarkInfo.textContent = `Última marca: ${ultimaMarca.tipo} a las ${ultimaMarca.fechaHora.toDate().toLocaleTimeString()}`;
+                    turnosDelDia.forEach(t => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td data-label="Hora">${t.fechaHora.toDate().toLocaleTimeString()}</td>
+                            <td data-label="Tipo">${t.tipo}</td>
+                            <td data-label="Ubicación">${t.ubicacion || 'No registrada'}</td>`;
+                        tbody.appendChild(tr);
+                    });
+            });
+            unsubscribes.push(turnosListener);
+        }
+
+        function escucharNotificaciones() {
+            const notifListener = db.collection('notificaciones').orderBy('fecha', 'desc').limit(20).onSnapshot(snapshot => {
+                const countEl = document.getElementById('notification-count');
+                const listEl = document.getElementById('notification-list');
+                listEl.innerHTML = '';
+                let unreadCount = 0;
+                if (snapshot.empty) {
+                    listEl.innerHTML = '<li>No hay notificaciones recientes.</li>';
+                } else {
+                    snapshot.forEach(doc => {
+                        const notif = doc.data();
+                        if (!notif.leida) { unreadCount++; }
+                        const li = document.createElement('li');
+                        li.className = 'notification-item ' + (notif.leida ? '' : 'unread');
+                        li.innerHTML = `<div class="notification-icon ${notif.tipo || 'entrada'}">${icons[notif.tipo] || icons['entrada']}</div><div class="notification-content"><p>${notif.mensaje}</p><small>${notif.fecha.toDate().toLocaleString()}</small></div>`;
+                        listEl.appendChild(li);
+                    });
+                }
+                countEl.style.display = unreadCount > 0 ? 'block' : 'none';
+                countEl.textContent = unreadCount;
+            }, error => console.error("Error escuchando notificaciones:", error));
+            unsubscribes.push(notifListener);
+        }
+        
+        async function marcarNotificacionesComoLeidas() {
+            const unreadSnapshot = await db.collection('notificaciones').where('leida', '==', false).get();
+            if (unreadSnapshot.empty) return;
+            const batch = db.batch();
+            unreadSnapshot.forEach(doc => {
+                batch.update(doc.ref, { leida: true });
+            });
+            await batch.commit().catch(err => console.error("Error al marcar notificaciones como leídas:", err));
+        }
+
+        async function crearNotificacion(mensaje, tipo) {
+            try {
+                await db.collection('notificaciones').add({
+                    mensaje: mensaje,
+                    fecha: new Date(),
+                    leida: false,
+                    tipo: tipo
+                });
+            } catch (error) {
+                console.error("Error creando notificación:", error);
+            }
+        }
+
+        // --- 6. LÓGICA DE ACCIONES Y MANEJO DE MODALES ---
+        function openAddModal() {
+            currentEditingRut = null;
+            const formModal = document.getElementById('form-modal-overlay');
+            formModal.querySelector('form').reset();
+            formModal.querySelector('#modal-title').textContent = "Agregar Personal";
+            formModal.querySelector('#rut').disabled = false;
+            formModal.querySelector('#reset-password-btn').classList.add('hidden');
+            toggleModal('form-modal-overlay', true);
+        }
+
+        async function openEditModal(rut) {
+            currentEditingRut = rut;
+            try {
+                const doc = await db.collection('personal').doc(rut).get();
+                if (!doc.exists) {
+                    showToast('Empleado no encontrado.', 'error');
+                    return;
+                }
+                const empleado = doc.data();
+                const formModal = document.getElementById('form-modal-overlay');
+                formModal.querySelector('#modal-title').textContent = "Detalles / Editar Personal";
+                formModal.querySelector('#rut').value = empleado.rut;
+                formModal.querySelector('#rut').disabled = true;
+                Object.keys(empleado).forEach(key => {
+                    const input = formModal.querySelector(`#${key}`);
+                    if (input) {
+                        if (input.type === 'date' && empleado[key]) {
+                            input.value = new Date(empleado[key]).toISOString().split('T')[0];
+                        } else {
+                            input.value = empleado[key];
+                        }
+                    }
+                });
+                formModal.querySelector('#reset-password-btn').classList.remove('hidden');
+                toggleModal('form-modal-overlay', true);
+            } catch (error) {
+                console.error("Error al abrir modal de edición:", error);
+                showToast('Error al cargar datos.', 'error');
+            }
+        }
+        
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value.trim();
+            });
+            const rut = e.target.querySelector('#rut').value.trim();
+            
+            if (!validarRut(rut)) {
+                showToast('El RUT ingresado no es válido.', 'error');
+                return;
+            }
+            data.rut = rut;
+
+            try {
+                if (currentEditingRut) {
+                    await db.collection('personal').doc(currentEditingRut).update(data);
+                    showToast("Personal actualizado con éxito.", "success");
+                } else {
+                    const userCheck = await db.collection('usuarios').doc(rut).get();
+                    if (userCheck.exists) {
+                        showToast('El RUT ya se encuentra registrado.', 'error');
+                        return;
+                    }
+                    const tempPassword = Math.floor(1000 + Math.random() * 9000).toString();
+                    const newEmpleado = { ...data, ubicacion: null };
+                    const newUser = { rut: rut, password: tempPassword, rol: 'guard' };
+                    
+                    const batch = db.batch();
+                    batch.set(db.collection('personal').doc(rut), newEmpleado);
+                    batch.set(db.collection('usuarios').doc(rut), newUser);
+                    await batch.commit();
+                    showToast(`Personal agregado. Contraseña temporal: ${tempPassword}`, "success", 6000);
+                }
+                toggleModal('form-modal-overlay', false);
+            } catch (error) {
+                console.error("Error al guardar personal:", error);
+                showToast('Error al guardar.', 'error');
+            }
+            currentEditingRut = null;
+        }
+
+        async function handleUserPasswordChange(e) {
+            e.preventDefault();
+            const form = e.target;
+            const currentPassword = form.querySelector('#current-password').value;
+            const newPassword = form.querySelector('#new-password').value;
+            const confirmPassword = form.querySelector('#confirm-password').value;
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showToast("Por favor, complete todos los campos.", "error");
+                return;
+            }
+            const passwordError = validarPassword(newPassword);
+            if (passwordError) {
+                showToast(passwordError, 'error');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                showToast("Las nuevas contraseñas no coinciden.", "error");
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection('usuarios').doc(session.user.rut).get();
+                const user = userDoc.data();
+                if (user.password !== currentPassword) {
+                    showToast("La contraseña actual es incorrecta.", "error");
+                    return;
+                }
+                await db.collection('usuarios').doc(session.user.rut).update({ password: newPassword });
+                showToast("Contraseña actualizada con éxito.", "success");
+                toggleModal('password-modal-overlay', false);
+            } catch (error) {
+                console.error("Error al cambiar contraseña:", error);
+                showToast('No se pudo actualizar la contraseña.', 'error');
+            }
+        }
+
+        async function handleAdminPasswordReset(rut) {
+            if (!rut) return;
+            const newPassword = Math.floor(1000 + Math.random() * 9000).toString();
+            try {
+                await db.collection('usuarios').doc(rut).update({ password: newPassword });
+                showToast(`Contraseña de ${rut} reseteada a: ${newPassword}`, "success", 6000);
+            } catch (error) {
+                console.error("Error al resetear contraseña:", error);
+                showToast("No se pudo resetear la contraseña.", "error");
+            }
+        }
+        
+        function openConfirmModal(type, rut) {
+            actionToConfirm = { type, rut };
+            const modal = document.getElementById('confirm-modal-overlay');
+            modal.querySelector('#confirm-title').textContent = type === 'delete' ? 'Confirmar Eliminación' : 'Confirmar Reseteo';
+            modal.querySelector('#confirm-text').innerHTML = type === 'delete' ?
+                `¿Estás seguro de que deseas eliminar a este empleado (<strong>${rut}</strong>)? Esta acción no se puede deshacer.` :
+                `¿Estás seguro de que deseas resetear la contraseña de <strong>${rut}</strong>? Se generará una nueva contraseña aleatoria.`;
+            
+            const btn = modal.querySelector('#confirm-action-btn');
+            btn.textContent = type === 'delete' ? 'Eliminar' : 'Resetear';
+            btn.className = 'btn';
+            if (type === 'delete') {
+                btn.classList.add('btn-danger');
+            } else {
+                btn.classList.add('btn-warning');
+            }
+            toggleModal('confirm-modal-overlay', true);
+        }
+
+        async function handleConfirmAction() {
+            if (!actionToConfirm) return;
+            const { type, rut } = actionToConfirm;
+            try {
+                if (type === 'delete') {
+                    const batch = db.batch();
+                    batch.delete(db.collection('personal').doc(rut));
+                    batch.delete(db.collection('usuarios').doc(rut));
+                    await batch.commit();
+                    showToast('Empleado eliminado con éxito.');
+                } else if (type === 'reset-password') {
+                    await handleAdminPasswordReset(rut);
+                }
+            } catch (error) {
+                console.error(`Error en acción de confirmación (${type}):`, error);
+                showToast('La operación falló.', 'error');
+            }
+            toggleModal('confirm-modal-overlay', false);
+            actionToConfirm = null;
+        }
+
+        function handleMarkEntry() {
+            showToast('Obteniendo ubicación...', 'info');
+            if (!("geolocation" in navigator)) {
+                showToast('Geolocalización no soportada.', 'error');
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                const ubicacionStr = `Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}`;
+                try {
+                    await db.collection('personal').doc(session.user.rut).update({
+                        estadoLaboral: 'Activo',
+                        ubicacion: new firebase.firestore.GeoPoint(latitude, longitude)
+                    });
+                    await db.collection('registrosDeTurno').add({
+                        rut: session.user.rut,
+                        tipo: 'Entrada',
+                        ubicacion: ubicacionStr,
+                        fechaHora: new Date()
+                    });
+                    await crearNotificacion(`${session.personalData.nombre} ${session.personalData.apellido} ha marcado su entrada.`, 'entrada');
+                    showToast('Entrada marcada con éxito.', 'success');
+                } catch (error) {
+                    console.error("Error marcando entrada:", error);
+                    showToast('Error al guardar la marca.', 'error');
+                }
+            }, async (err) => {
+                try {
+                    await db.collection('personal').doc(session.user.rut).update({ estadoLaboral: 'Activo', ubicacion: null });
+                    await db.collection('registrosDeTurno').add({
+                        rut: session.user.rut,
+                        tipo: 'Entrada',
+                        ubicacion: 'Sin ubicación (GPS denegado)',
+                        fechaHora: new Date()
+                    });
+                    await crearNotificacion(`${session.personalData.nombre} ${session.personalData.apellido} ha marcado su entrada (sin GPS).`, 'entrada');
+                    showToast('Entrada marcada sin ubicación.', 'warning');
+                } catch (error) {
+                    console.error("Error marcando entrada sin GPS:", error);
+                    showToast('Error al guardar la marca.', 'error');
+                }
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+        }
+
+        async function handleMarkExit() {
+            try {
+                await db.collection('personal').doc(session.user.rut).update({ estadoLaboral: 'Inactivo', ubicacion: null });
+                await db.collection('registrosDeTurno').add({
+                    rut: session.user.rut,
+                    tipo: 'Salida',
+                    ubicacion: 'N/A',
+                    fechaHora: new Date()
+                });
+                await crearNotificacion(`${session.personalData.nombre} ${session.personalData.apellido} ha marcado su salida.`, 'salida');
+                showToast('Salida marcada con éxito.', 'success');
+            } catch (error) {
+                console.error("Error marcando salida:", error);
+                showToast('Error al guardar la marca.', 'error');
+            }
+        }
+
+        // --- 7. EVENT LISTENERS Y SETUP INICIAL ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            
+            document.getElementById('admin-logout-btn').addEventListener('click', handleLogout);
+            document.getElementById('guard-logout-btn').addEventListener('click', handleLogout);
+            
+            document.getElementById('add-employee-btn').addEventListener('click', openAddModal);
+            document.getElementById('show-map-btn').addEventListener('click', showMap);
+            
+            document.getElementById('mark-entry-btn').addEventListener('click', handleMarkEntry);
+            document.getElementById('mark-exit-btn').addEventListener('click', handleMarkExit);
+            
+            document.getElementById('admin-change-password-btn').addEventListener('click', () => toggleModal('password-modal-overlay', true));
+            document.getElementById('guard-change-password-btn').addEventListener('click', () => toggleModal('password-modal-overlay', true));
+
+            document.querySelector('#admin-panel-view #employee-table tbody').addEventListener('click', e => {
+                const target = e.target.closest('button.action-btn');
+                if (!target) return;
+                const rut = target.dataset.rut;
+                if (target.classList.contains('edit')) {
+                    openEditModal(rut);
+                } else if (target.classList.contains('delete')) {
+                    openConfirmModal('delete', rut);
+                }
+            });
+
+            document.getElementById('employee-form').addEventListener('submit', handleFormSubmit);
+            document.getElementById('change-password-form').addEventListener('submit', handleUserPasswordChange);
+            document.getElementById('reset-password-btn').addEventListener('click', () => openConfirmModal('reset-password', currentEditingRut));
+            document.getElementById('confirm-action-btn').addEventListener('click', handleConfirmAction);
+
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', e => {
+                    if (e.target === overlay) toggleModal(overlay.id, false);
+                });
+            });
+            document.querySelectorAll('.close-modal-btn, #cancel-action-btn, .js-close-modal').forEach(btn => {
+                const modal = btn.closest('.modal-overlay');
+                if (modal) btn.addEventListener('click', () => toggleModal(modal.id, false));
+            });
+            
+            // Lógica de UI para el panel de notificaciones
+            const notificationContainer = document.querySelector('.notification-container');
+            const notificationPanel = document.getElementById('notification-panel');
+            if (notificationContainer && notificationPanel) {
+                let hideTimeout;
+                const showPanel = () => {
+                    clearTimeout(hideTimeout);
+                    if (!notificationPanel.classList.contains('visible')) {
+                        notificationPanel.classList.remove('hidden');
+                        setTimeout(() => notificationPanel.classList.add('visible'), 10);
+                        setTimeout(marcarNotificacionesComoLeidas, 2500);
+                    }
+                };
+                const startHideTimer = () => {
+                    hideTimeout = setTimeout(() => {
+                        notificationPanel.classList.remove('visible');
+                        setTimeout(() => notificationPanel.classList.add('hidden'), 300);
+                    }, 300);
+                };
+                [notificationContainer, notificationPanel].forEach(element => {
+                    element.addEventListener('mouseenter', showPanel);
+                    element.addEventListener('mouseleave', startHideTimer);
+                });
+            }
+
+            navigateToView('login');
+        });
+
+        // --- 8. FUNCIONES DE AYUDA (UTILITIES) ---
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.getElementById('toast');
+            if(!toast) return;
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => { toast.className = toast.className.replace('show', ''); }, duration);
+        }
+
+        function toggleModal(modalId, show = false) { 
+            const modal = document.getElementById(modalId); 
+            if (modal) modal.classList.toggle('visible', show);
+        }
+
+        function showMap() {
+            toggleModal('map-modal', true);
+            setTimeout(() => {
+                if (!leafletMap) {
+                    leafletMap = L.map('map-container').setView([-33.45, -70.65], 11);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(leafletMap);
+                }
+                updateMapMarkers();
+                leafletMap.invalidateSize();
+            }, 10);
+        }
+
+        async function updateMapMarkers() {
+            if (!leafletMap) return;
+            if (!markersLayer) {
+                markersLayer = L.layerGroup().addTo(leafletMap);
+            }
+            markersLayer.clearLayers();
+            const querySnapshot = await db.collection('personal').where('estadoLaboral', '==', 'Activo').get();
+            if (!querySnapshot.empty) {
+                querySnapshot.forEach(doc => {
+                    const p = doc.data();
+                    if(p.ubicacion && p.ubicacion.latitude) {
+                        const marker = L.marker([p.ubicacion.latitude, p.ubicacion.longitude]).bindPopup(`<b>${p.nombre} ${p.apellido}</b>`);
+                        markersLayer.addLayer(marker);
+                    }
+                });
+                if (markersLayer.getLayers().length > 0) {
+                    leafletMap.fitBounds(markersLayer.getBounds().pad(0.2));
+                }
+            }
+        }
+    </script>
+</body>
+</html>
