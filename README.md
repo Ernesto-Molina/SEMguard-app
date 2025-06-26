@@ -15,7 +15,8 @@ La aplicación utiliza una arquitectura **Backend as a Service (BaaS)**:
 La aplicación no requiere un proceso de build ni dependencias de servidor.
 
 1.  **Clona o descarga este repositorio.**
-2.  **Abre el archivo `index.html`** en cualquier navegador web moderno.
+2.  **Abre la carpeta `public`**
+3.  **Abre el archivo `index.html`** en cualquier navegador web moderno.
 
 Es necesaria una conexión a internet para que la aplicación pueda conectarse a los servicios de Firebase.
 
