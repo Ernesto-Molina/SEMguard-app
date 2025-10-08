@@ -6,7 +6,7 @@ SEMguard es una aplicación web (SPA) para la gestión del personal de seguridad
 
 La aplicación utiliza una arquitectura **Backend as a Service (BaaS)**:
 
-- **Frontend:** Una Single Page Application (SPA) construida con **HTML, CSS y JavaScript (Vanilla JS)**.
+- **Frontend:** Una Single Page Application (SPA) construida con **HTML5, CSS y JavaScript (Vanilla JS)**.
 - **Backend:** **Google Firebase**, que provee la base de datos y la sincronización en tiempo real.
 - **Base de Datos:** **Cloud Firestore** (NoSQL).
 - **Hosting:** **Firebase Hosting**, **Url:** `https://proyectoarqui-dffa4.web.app/`
