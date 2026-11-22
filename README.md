@@ -6,13 +6,9 @@ Aplicación web (SPA) para administrar las horas de trabajo del personal de segu
 
 **Demo en línea:** https://proyectoarqui-dffa4.web.app/
 
-<!--
-Agrega aquí 2 o 3 capturas (login, panel de administrador con el mapa, portal del guardia).
-Súbelas a una carpeta docs/ y quita los comentarios:
-
-![Panel de administrador](docs/captura-admin.png)
-![Portal del guardia](docs/captura-guardia.png)
--->
+![alt text](image.png)
+![alt text](image-1.png)
+![alt text](image-2.png)
 
 ## Usuarios de prueba
 
@@ -20,10 +16,10 @@ Para probar la demo sin registrarte, usa estas credenciales **ficticias**:
 
 | Rol | RUT | Contraseña |
 |---|---|---|
-| Administrador | `[RUT-DE-PRUEBA]` | `[CONTRASEÑA-DE-PRUEBA]` |
-| Guardia | `[RUT-DE-PRUEBA]` | `[CONTRASEÑA-DE-PRUEBA]` |
+| Administrador | `admin` | `Admin12` |
+| Guardia | `33565378-5` | `4661` |
 
-<!-- Reemplaza los valores con usuarios de demostración. No uses RUT ni datos de personas reales. -->
+
 
 ## Funcionalidades
 
@@ -116,8 +112,8 @@ SEMguard es un prototipo académico. Las mejoras identificadas son:
 
 ## Equipo
 
-- **Ernesto Molina** – [describe tu aporte: por ejemplo, diseño del modelo de datos en Firestore, integración con Firebase, lógica de turnos y geolocalización].
-- **[Nombre compañero/a]** – [aporte].
+- **Ernesto Molina** – [Diseño del modelo de datos en Firestore, integración con Firebase, lógica de turnos y geolocalización].
+- **Diego Espinoza** – [Creacion del HTML, Recopilacion de necesidades del usuario, Frond End].
 
 ## Licencia
 
