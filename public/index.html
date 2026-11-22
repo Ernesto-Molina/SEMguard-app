@@ -286,15 +286,7 @@
         
     <script type="module">
         // --- 1. CONFIGURACIÓN E INICIALIZACIÓN DE FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAygWClNJT4IYPuF9P-QB93UBK9Y8QCIm4",
-            authDomain: "proyectoarqui-dffa4.firebaseapp.com",
-            databaseURL: "https://proyectoarqui-dffa4-default-rtdb.firebaseio.com",
-            projectId: "proyectoarqui-dffa4",
-            storageBucket: "proyectoarqui-dffa4.firebasestorage.app",
-            messagingSenderId: "863862999605",
-            appId: "1:863862999605:web:fad96c96f7be0fcac4bf7c"
-        };
+        import { firebaseConfig } from './firebase-config.js';
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
